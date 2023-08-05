@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: usersControllers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: usersControllers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const User = require('../models/userModel');
+const { admin } = require('../helpers/firebase');
+const {deleteEntriesByUser}=require('../controllers/entriesController')
+
+/**
+ * Obtener todos los usuarios de la base de datos.
+ * @function getUsersAdmin
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json}
+ */
+const getUsersAdmin = async (req, res) => {
+
+    try {
+
+        const user  = await User.find();
+
+        return res.status(200).json({
+            ok: true,
+            data: user
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "Error al obtener los usuarios",
+        });
+    }
+};
+
+/**
+ * Obtener un usuario de la base de datos por su email.
+ * @function getUserAdmin
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json}
+ */
+const getUserAdmin = async (req, res) => {
+
+    const email = req.params.id;
+  
+    try {
+
+        const user = await User.findOne({email: email});
+
+        return res.status(200).json({
+            ok: true,
+            msg: "Usuario encontrado",
+            data: user,
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "No se ha podido obtener el usuario",
+        });
+    }
+};
+
+/**
+ * Obtener un usuario de la base de datos por su email utilizando el cuerpo de la solicitud.
+ * @function getUserBody
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @return {Object} Usuario encontrado.
+ */
+const getUserBody = async (req, res) => {
+
+    const email = req;
+  
+    try {
+
+        const user = await User.findOne({email: email});
+        return user
+
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "No se ha podido obtener el usuario",
+        });
+    }
+};
+
+/**
+ * Crear un nuevo usuario en la base de datos que viene desde la función del registro.
+ * @function createUserAdmin
+ * @async
+ * @param {Object} newUserDB Objeto con los datos del nuevo usuario.
+ * @return {Object} Usuario creado que se envía al controlador del registro.
+ */
+const createUserAdmin = async (newUserDB) => {
+
+    const newUser = new User(newUserDB);
+
+    try {
+
+        const user = await newUser.save();
+        return user
+        
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "Error al crear el usuario",
+        });
+    }
+};
+
+/**
+ * Editar un usuario de la base de datos por su ID.
+ * @function editUserAdmin
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json}
+ */
+const editUserAdmin = async (req, res) => {
+ 
+    try {
+        
+        const id = req.params.id;
+        const body = req.body;
+        const user = await User.findOneAndUpdate({ _id: id }, { $set: body });
+        
+        await admin.auth().updateUser(user.uid, {
+            email: body.email,
+            password: body.password
+        });
+        const data = await User.findOne({_id: id});
+      
+        return res.status(200).json({
+            ok:true,
+            data,  
+        }) 
+
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "Error al editar el usuario",
+        });
+    };
+};
+
+/**
+ * Eliminar un usuario de la base de datos por su ID.
+ * @function deleteUserAdmin
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json}
+ */
+const deleteUserAdmin = async (req, res) => {
+
+    try {
+        
+        const id = req.params.id;
+        const user = await User.findOneAndDelete({ _id: id });
+        const deletedEntriesCount = await deleteEntriesByUser(id);
+        await admin.auth().deleteUser(user.uid)
+
+        return res.status(200).json({
+            ok:true,
+            user,
+            deletedEntriesCount
+        })
+       
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: 'Error al borrar el usuario.'
+        });
+    }
+};
+
+
+module.exports = {
+
+   getUsersAdmin,
+   getUserAdmin,
+   createUserAdmin,
+   deleteUserAdmin,
+   editUserAdmin,
+   getUserBody,
+
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#createEntry">createEntry</a></li><li><a href="global.html#createUserAdmin">createUserAdmin</a></li><li><a href="global.html#deleteEntriesByUserId">deleteEntriesByUserId</a></li><li><a href="global.html#deleteEntry">deleteEntry</a></li><li><a href="global.html#deleteUserAdmin">deleteUserAdmin</a></li><li><a href="global.html#editEntry">editEntry</a></li><li><a href="global.html#editUserAdmin">editUserAdmin</a></li><li><a href="global.html#getEntryAdmin">getEntryAdmin</a></li><li><a href="global.html#getReservations">getReservations</a></li><li><a href="global.html#getUserAdmin">getUserAdmin</a></li><li><a href="global.html#getUserBody">getUserBody</a></li><li><a href="global.html#getUsersAdmin">getUsersAdmin</a></li><li><a href="global.html#logOut">logOut</a></li><li><a href="global.html#signIn">signIn</a></li><li><a href="global.html#signUp">signUp</a></li><li><a href="global.html#verifyAndRenewToken">verifyAndRenewToken</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon May 08 2023 22:19:37 GMT+0200 (hora de verano de Europa central)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: authControllers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: authControllers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const { createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword } = require('firebase/auth');
+const { authFb } = require('../helpers/firebase')
+const { createUserAdmin, getUserBody } = require('./usersControllers')
+const { admin } = require('../helpers/firebase');
+
+/**
+ * Registrar un nuevo usuario y almacenarlo en la base de datos.
+ * @function signUp
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json}
+ */
+const signUp = async (req, res) => {
+
+    try {
+
+        const { email, password, username } = req.body
+
+        if (!res.errors) {
+            
+            const userCredentials = await createUserWithEmailAndPassword(authFb, email, password)
+            const token = userCredentials._tokenResponse.idToken
+            
+            const newUserDB = {
+                email: email,
+                username: username,
+                role: 'user',
+                uid: userCredentials.user.uid
+            }
+
+          const user =  await createUserAdmin(newUserDB)
+        
+            return res.status(200).json({
+                ok:true,
+                user,
+                token
+            })
+            
+        } else {
+            
+            const errors = res.errors;
+            return res.status(200, { errors });
+
+        }
+
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "Error al crear el usuario",
+            error: error.code
+        });
+    }
+};
+
+
+/**
+ * Iniciar sesión con un usuario 
+ * @function signIn
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json} mensaje de respuesta y objetos
+ */
+const signIn = async (req, res) => {
+    
+    const { email, password } = req.body
+  
+    try {
+        
+        const userCredentials = await signInWithEmailAndPassword(authFb, email, password);
+        const token = userCredentials._tokenResponse.idToken
+       
+        const user = await getUserBody(email)
+        return res.status(200).json({
+            ok:true,
+            user,
+            token
+        })
+        
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "Error al inciar sesion",
+            error: error.code
+        });
+    }
+};
+
+/**
+ * Cerrar sesión del usuario actual.
+ * @function logOut
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json} 
+ */
+const logOut = async (req, res) => {
+
+    try {
+
+        await signOut(authFb)
+        return res.status(200).json({
+            ok:true,
+            mgs: 'Cerrada sesión de usuario'
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            ok: false,
+            msg: "Error al crear el usuario",
+            error: error.code
+        });
+    }
+};
+
+/**
+ * Verificar y renovar el token de un usuario.
+ * @function verifyAndRenewToken
+ * @async
+ * @param {Object} req Objeto de solicitud.
+ * @param {Object} res Objeto de respuesta
+ * @return {json} mensaje de respuesta, objetos y el token en caso de que se pida.
+ */
+const verifyAndRenewToken = async (req, res) => {
+
+    const idToken = req.body.token;
+    const uid = req.body.uid;
+
+    if (!idToken &amp;&amp; !uid ) {
+
+        return res.status(400).json({ 
+            isValid: false, 
+            msg: "No se ha encontrado ni token ni usuario" 
+        });
+
+    } else if (idToken &amp;&amp; uid) {
+
+       try {
+
+        await admin.auth().getUser(uid);
+        const renewedToken = await admin.auth().createCustomToken(uid);
+  
+        res.status(200).json({ 
+            isValid: true, 
+            token: renewedToken,
+            msg: "Usuario y token validados"
+        });
+
+      } catch (error) {
+
+        res.status(401).json({ 
+            isValid: false, 
+            msg: "Usuario no válido" 
+        });
+      } 
+
+    } else {
+
+      try {
+
+        await admin.auth().verifyIdToken(idToken);
+
+        res.status(200).json({ 
+            isValid: true,
+            msg: 'Token verificado'
+        });
+
+      } catch (error) {
+
+        res.status(401).json({
+             isValid: false, 
+             msg: "El token no es válido" 
+        });
+      }
+    }
+};
+
+module.exports = {
+    signIn,
+    logOut,
+    signUp,
+    verifyAndRenewToken
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#createEntry">createEntry</a></li><li><a href="global.html#createUserAdmin">createUserAdmin</a></li><li><a href="global.html#deleteEntriesByUserId">deleteEntriesByUserId</a></li><li><a href="global.html#deleteEntry">deleteEntry</a></li><li><a href="global.html#deleteUserAdmin">deleteUserAdmin</a></li><li><a href="global.html#editEntry">editEntry</a></li><li><a href="global.html#editUserAdmin">editUserAdmin</a></li><li><a href="global.html#getEntryAdmin">getEntryAdmin</a></li><li><a href="global.html#getReservations">getReservations</a></li><li><a href="global.html#getUserAdmin">getUserAdmin</a></li><li><a href="global.html#getUserBody">getUserBody</a></li><li><a href="global.html#getUsersAdmin">getUsersAdmin</a></li><li><a href="global.html#logOut">logOut</a></li><li><a href="global.html#signIn">signIn</a></li><li><a href="global.html#signUp">signUp</a></li><li><a href="global.html#verifyAndRenewToken">verifyAndRenewToken</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon May 08 2023 22:19:37 GMT+0200 (hora de verano de Europa central)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
